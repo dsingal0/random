@@ -25,7 +25,6 @@ RUN  apt-get install -y git \
 # Git repo set up
 RUN git clone https://github.com/ethereum-mining/ethminer.git; \
     cd ethminer; \
-    git checkout tags/v0.19.0; \
     git submodule update --init --recursive
 
 # Build
