@@ -47,13 +47,13 @@ def main():
             old_title = title
             title = title.split("[W]")[0]
             searching_for = [
+                "psu",
+                "PSU",
+                "980",
                 "3060",
                 "1060",
                 "1070",
                 "1050",
-                "980",
-                "970",
-                "960",
                 "1080",
                 "1650",
                 "1660",
