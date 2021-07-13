@@ -2,31 +2,74 @@ import praw
 import configparser
 import webbrowser
 from sys import platform
+import os
+import argparse
+from time import sleep
 
-page_url = "http://example.com/"
-searching_for = [
-    "egpu",
+def find(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+
+
+parser = argparse.ArgumentParser(
+    description="Buying and Selling hardware on reddit.com/r/hardwareswap"
+)
+
+parser.add_argument("-b", "--buy", help="enable buying")
+
+parser.add_argument("-s", "--sell", help="enable selling")
+
+parser.add_argument("-r", "--retrospect", help="look back in time")
+
+args = parser.parse_args()
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
+
+is_selling, is_buying, is_retrospect = (
+    str2bool(args.sell),
+    str2bool(args.buy),
+    str2bool(args.retrospect),
+)
+
+selling = [
+    "3080 ti",
+    "3080ti",
+    "3090",
     "razer core",
-    "core x",
-    "tkl",
+    "egpu",
+    "quadcast",
     "60%",
-    "ducky",
-    "k65",
-    "gk61",
-    "keychron",
-    "980",
-    "1050",
-    "1060",
-    "1070",
-    "1080",
-    "1650",
-    "1660",
+    "kindle",
+    "fire hd",
+    "tablet",
+]
+page_url = "http://example.com/"
+buying = [
+    "3060",
     "2060",
     "2070",
-    "2080",
-    "3060",
-    "3070",
-    "3080",
+    "1650",
+    "1660",
+]
+disqualifying_words_buy = [
+    "zephyrus",
+    "helios",
+    "nitro",
+    "laptop",
+    "10700",
+    "xps",
+    "10600",
 ]
 
 
@@ -39,39 +82,24 @@ def open_url():
 
 
 def linux_init(text):
-    import gi
-
-    gi.require_version("Notify", "0.7")
-    from gi.repository import Notify
-
-    Notify.init(text)
-    return Notify
+    return
 
 
 def windows_init(text):
-    import webbrowser
-    from win10toast_click import ToastNotifier
-
-    toaster = ToastNotifier()
-    toaster.show_toast(text)
-    return toaster
+    return
 
 
 def linux_notification(notifier, text, url=None):
+    global page_url
+    page_url = url
+    open_url()
     return
 
 
 def windows_notification(notifier, text, url=None):
     global page_url
     page_url = url
-    notifier.show_toast(
-        text,
-        url,
-        icon_path=None,
-        duration=None,
-        threaded=True,
-        callback_on_click=open_url,
-    )
+    open_url()
     return
 
 
@@ -99,14 +127,60 @@ def get_title(submission):
 def get_url(submission):
     return submission.url
 
+def get_id(submission):
+    return submission.id
 
 def get_selftext(submission):
     return submission.selftext
 
 
+def run_rules(submission, old_id, notifier):
+    title = get_title(submission).lower()
+    url = get_url(submission)
+    id = get_id(submission)
+    # body=get_selftext(submission)
+    if id==old_id:
+        return id
+    old_id=id
+    have_want_tuple = title.split("[w]")
+    # don't let program die if poorly formatted title
+    if len(have_want_tuple) < 2:
+        return old_id
+    have, want = have_want_tuple[0], have_want_tuple[1]
+    # disqualify if bad listing
+    bad_link = False
+    if is_buying:
+        for item in disqualifying_words_buy:
+            if item in have:
+                bad_link = True
+                break
+    if bad_link == True:
+        return old_id
+    if is_buying:
+        for item in buying:
+            if item in have:
+                if "paypal" not in want:
+                    if "usa-ca" not in have:
+                        return old_id
+                print(have, want, item)
+                generic_notification(notifier, have, url)
+                break
+    if is_selling:
+        for item in selling:
+            if item in want:
+                print(have, want, item)
+                generic_notification(notifier, have, url)
+                break
+    return old_id
+
+
 def main():
     config = configparser.ConfigParser()
-    config.read("reddit_bot.ini")
+    path = os.getcwd()
+    file = "reddit_bot.ini"
+    config_path = find(file, path)
+    print("reading config file from: ", config_path)
+    config.read(config_path)
     print(config.sections)
     reddit = praw.Reddit(
         client_id=config["hardwareswap"]["client_id"],
@@ -115,28 +189,17 @@ def main():
     )
     # start loop
     notifier = generic_init("hardwareswap scraper")
-    old_title = None
+    old_id = None
+    if is_retrospect==True:
+        #get 100 past posts
+        submissions = list(reddit.subreddit("hardwareswap").new(limit=50))
+        for submission in submissions:
+            old_id = run_rules(submission, old_id, notifier)
     while True:
         try:
             submission = list(reddit.subreddit("hardwareswap").new(limit=1))[0]
-            title = get_title(submission).lower()
-            url = get_url(submission)
-            # body=get_selftext(submission)
-            if title == old_title:
-                continue
-            old_title = title
-            have_want_tuple = title.split("[w]")
-            # don't let program die if poorly formatted title
-            if len(have_want_tuple) < 2:
-                continue
-            have, want = have_want_tuple[0], have_want_tuple[1]
-            for item in searching_for:
-                if item in have:
-                    if "paypal" not in want:
-                        if "usa-ca" not in have:
-                            continue
-                    print(have, want, item)
-                    generic_notification(notifier, have, url)
+            old_id = run_rules(submission, old_id, notifier)
+            sleep(2)
         except praw.exceptions.PRAWException:
             continue
 
