@@ -44,9 +44,11 @@ is_selling, is_buying, is_retrospect = (
 )
 
 selling = [
+    "egpu",
     "3090",
+    "1060"
 ]
-buying = ["ryzen", "combo","bundle"]
+buying = ["combo","bundle"]
 page_url = "http://example.com/"
 disqualifying_words_buy = []
 
