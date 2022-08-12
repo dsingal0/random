@@ -43,12 +43,10 @@ is_selling, is_buying, is_retrospect = (
     str2bool(args.retrospect),
 )
 
-selling = [
-    "3090",
-]
-buying = ["ryzen", "combo","bundle"]
+selling = ["egpu", "razer core"]
+buying = ["1660","3060","3050","2070","2080","2060"]
 page_url = "http://example.com/"
-disqualifying_words_buy = []
+disqualifying_words_buy = ["laptop", "desktop", "prebuilt"]
 
 
 def open_url():
@@ -142,9 +140,9 @@ def run_rules(submission, old_id, notifier):
     if is_buying:
         for item in buying:
             if item in have:
-                if "paypal" not in want:
-                    if "usa-ca" not in have:
-                        return old_id
+                # if "paypal" not in want:
+                #    if "usa-ca" not in have:
+                #        return old_id
                 print(have, want, item)
                 generic_notification(notifier, have, url)
                 break
