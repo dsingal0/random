@@ -43,15 +43,15 @@ is_selling, is_buying, is_retrospect = (
     str2bool(args.retrospect),
 )
 
-selling = ["egpu", "razer core"]
-buying = ["1660","3060","3050","2070","2080","2060"]
+selling = ["6600", "6650", "6700", "egpu", "razer core"]
+buying = ["logitech", "oneplus", "3090", "iphone"]
 page_url = "http://example.com/"
-disqualifying_words_buy = ["laptop", "desktop", "prebuilt"]
+disqualifying_words_buy = []
 
 
 def open_url():
     try:
-        webbrowser.open_new(page_url)
+        webbrowser.open_new_tab(page_url)
         print("Opening URL...")
     except:
         print("Failed to open URL. Unsupported variable type.")
@@ -125,10 +125,6 @@ def run_rules(submission, old_id, notifier):
     if len(have_want_tuple) < 2:
         return old_id
     have, want = have_want_tuple[0], have_want_tuple[1]
-    # CA only
-    # if "usa-ca" not in have:
-    #    return old_id
-    # disqualify if bad listing
     bad_link = False
     if is_buying:
         for item in disqualifying_words_buy:
@@ -140,9 +136,6 @@ def run_rules(submission, old_id, notifier):
     if is_buying:
         for item in buying:
             if item in have:
-                # if "paypal" not in want:
-                #    if "usa-ca" not in have:
-                #        return old_id
                 print(have, want, item)
                 generic_notification(notifier, have, url)
                 break

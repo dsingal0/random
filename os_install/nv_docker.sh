@@ -1,31 +1,17 @@
 #!/bin/bash
-
-# add ppa
-sudo add-apt-repository -y ppa:graphics-drivers/ppa #nv driver
-# Update packages
-sudo apt update
-sudo apt dist-upgrade -y
-# install nvidia driver
-sudo apt-get install -y nvidia-driver-520
-sudo modprobe nvidia
-# install development tools 
-sudo apt-get install -y neovim git neofetch htop tree ca-certificates curl gnupg lsb-release
-
-# install docker
+# Docker
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  jammy stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo groupadd docker
-# add self to docker user group(hard coded username, so TODO replace)
 sudo usermod -aG docker dsingal
 sudo systemctl restart docker
-
 # NVIDIA Docker
-# hard coded distribution name
 distribution=ubuntu22.04 \
       && curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
       && curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
@@ -34,9 +20,6 @@ distribution=ubuntu22.04 \
 sudo apt-get update
 sudo apt-get install -y nvidia-docker2
 sudo systemctl restart docker
-# docker pull test and run
-sudo docker run --rm --gpus all nvcr.io/nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
-
-# Remove fluff
-sudo apt-get purge -y snapd* flatpak libreoffice* firefox* geary
-sudo apt-get autoremove -y
+#sudo docker pull nvcr.io/nvidia/tensorrt:22.09-py3
+sudo docker pull nvcr.io/nvidia/pytorch:22.09-py3
+sudo docker pull nvcr.io/nvidia/tritonserver:22.09-pyt-python-py3
